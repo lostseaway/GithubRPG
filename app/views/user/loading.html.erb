@@ -1,0 +1,18 @@
+<head>
+	<script type="text/javascript">
+		$( document ).ready(function() {
+			setTimeout(function () {
+		        window.location.replace("/user/<%= @id%>");
+		    }, 100);
+		});
+
+		
+	</script>
+	<title>GithubRPG : Loading</title>
+</head>
+
+
+
+<div class='container' align="center">
+	<%= image_tag "loading.gif" %>
+</div>

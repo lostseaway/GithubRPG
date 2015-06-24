@@ -1,0 +1,36 @@
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<script type="text/javascript">
+	$(document).ready(function () {
+    $(".ex_users").click(function () {
+		var i_id = $(this).attr('id')
+		$(".container").html('<%= image_tag "loading.gif" %>')
+		setTimeout(function () {
+		        window.location.replace("/user/"+i_id);
+		    }, 100);
+    })
+});
+</script>
+
+<%=render "layouts/header"%>
+<div class="container">
+	<div class="col-md-5">
+		<table class='table table-bordered table-hover'>
+				<thead>
+					<tr>
+						<th>Some Users!</th>
+					</tr>
+				</thead>
+			   <tbody>
+			   <% @show_users.each do |item|%>
+			   		<tr class='ex_users' id="<%=item%>">
+			   			<td><h5><%=item%></h5></td>
+			   		</tr>
+			   <% end %>
+			   	<tr>
+		   			<td><small>More...</small></td>
+			   	</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

@@ -1,0 +1,23 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  event_id: 1
+  type: 
+  message: MyString
+  sha: MyString
+  before: MyString
+  created_at: 2015-06-19
+  additions: 1.5
+  changed: 1.5
+  deletions: 1.5
+
+two:
+  event_id: 1
+  type: 
+  message: MyString
+  sha: MyString
+  before: MyString
+  created_at: 2015-06-19
+  additions: 1.5
+  changed: 1.5
+  deletions: 1.5

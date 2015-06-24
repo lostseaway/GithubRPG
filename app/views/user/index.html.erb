@@ -1,0 +1,296 @@
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+  google.load("visualization", "1", {packages:["corechart",'line']});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([
+      ['Language', 'Byte-Of-Code'],
+      <% @lang.sort_by{|x| -x[0]}.each do |item|%>
+      ["<%= Lang.find(item[1]).lang%>",  <%= item[0]%>],
+     <%end%>
+    ]);
+
+  var options = {
+  	title: 'Byte of code',
+    pieHole: 0.4,
+  };
+
+    var chart = new google.visualization.PieChart(document.getElementById('bytechart'));
+    chart.draw(data, options);
+  }
+</script>
+
+<script type="text/javascript">
+  google.load("visualization", "1", {packages:["corechart",'line']});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+
+    var data = google.visualization.arrayToDataTable([
+      ['Action', 'Byte-Of-Code'],
+      ["Additions",  <%= @modifyNo["added"]%>],
+      ["Changes",  <%= @modifyNo["modify"] %>],
+      ["Deletions",  <%= @modifyNo["delete"] %>],
+    ]);
+
+  var options = {
+  	title: 'Byte of code',
+    pieHole: 0.4,
+  };
+
+    var chart = new google.visualization.PieChart(document.getElementById('chart_mo'));
+    chart.draw(data, options);
+  }
+</script>
+<script type="text/javascript">
+google.load('visualization', '1', {packages: ['corechart', 'line']});
+google.setOnLoadCallback(drawBasic);
+
+function drawBasic() {
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'X');
+      data.addColumn('number', 'Users Commits');
+
+      data.addRows([
+        <% @gbyd.each do |item|%>
+       ["<%= item[0]%>",  <%= item[1]%>],
+     <%end%>
+      ]);
+
+      var options = {
+        hAxis: {
+          title: 'Days'
+        },
+        vAxis: {
+          title: 'Number of Commit'
+        }
+      };
+
+      var chart = new google.visualization.LineChart(document.getElementById('chart_day'));
+
+      chart.draw(data, options);
+    }
+</script>
+
+<script type="text/javascript">
+google.load('visualization', '1', {packages: ['corechart', 'line']});
+google.setOnLoadCallback(drawBasic);
+
+function drawBasic() {
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'X');
+      data.addColumn('number', 'Users Commits');
+
+      data.addRows([
+        <% @gbyhr.each do |item|%>
+       ["<%= item[0]%>",  <%= item[1]%>],
+     <%end%>
+      ]);
+
+      var options = {
+        hAxis: {
+          title: 'Time'
+        },
+        vAxis: {
+          title: 'Number of Commit'
+        }
+      };
+
+      var chart = new google.visualization.LineChart(document.getElementById('chart_hr'));
+
+      chart.draw(data, options);
+    }
+</script>
+
+<script type="text/javascript">
+google.load('visualization', '1', {packages: ['corechart', 'line']});
+google.setOnLoadCallback(drawBasic);
+
+function drawBasic() {
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'X');
+      data.addColumn('number', 'Users Commits');
+
+      data.addRows([
+        <% @gbydfw.each do |item|%>
+       ["<%= item[0]%>",  <%= item[1]%>],
+     <%end%>
+      ]);
+
+      var options = {
+        hAxis: {
+          title: 'Day of week'
+        },
+        vAxis: {
+          title: 'Number of Commit'
+        }
+      };
+
+      var chart = new google.visualization.LineChart(document.getElementById('chart_dfw'));
+
+      chart.draw(data, options);
+    }
+</script>
+<%= render "layouts/header" %>
+
+<div class="container">
+
+
+	<div class='row'>
+		<div class="col-xs-6 col-md-2">
+			<a href="#" class="thumbnail">
+	      		<img src=<%= @user["avatar_url"] %>>
+	    	</a>
+	    </div>
+
+	    <div class="col-xs-6 col-md-5">
+		    <div class="panel panel-default" style="height:132px">
+			  <div class="panel-body" style="padding:0px;padding-left:8px">
+			    <h6>Name : <%= @user["name"] %></h6>
+			    <h6>Login Name : <%= @user["login"] %></h6>
+			    <h6>Email : <%= @user["email"] %></h6>
+			    <h6>Register Since : <%= @user["created_at"].strftime("%m/%d/%Y") %></h6>
+			    <h6>Location : <%= @user["location"] %></h6>
+			  </div>
+			</div>
+		</div>
+	</div>
+		<div class="col-xs-6 col-md-9">
+			<div class="panel panel-default"  align="left">
+				<div class="row">
+					<div id="bytechart" style="width: 45%; display: inline-block"></div>
+					<div id="chart_mo" style="width: 50%; display: inline-block"></div>
+				</div>
+				<div id="chart_day" style="width: 100%;"></div>
+				<div id="chart_hr" style="width: 100%;"></div>
+				<div id="chart_dfw" style="width: 100%;"></div>
+			</div>
+		</div>
+
+		<div class="col-xs-3 col-md-3">
+			<div class='row'>
+				<table class='table table-bordered table-hover' style="table-layout: fixed; width: 100%">
+					<thead>
+						<tr>
+							<% repo_owner = @repo.select{|x| x.status=="owner"} %>
+							<th>Own Repository (<%= repo_owner.length %>)</th>
+						</tr>
+					</thead>
+				   <tbody>
+				   <% repo_owner[0..3].to_a.each do |item|%>
+				   		<% repo = Repository.find(item.repository_id) %>
+				   		<tr>
+				   			<td style="word-wrap: break-word"><h5><%= repo['name']%></h5>
+				   				<h6>
+				   					<% if repo['description']!="" && repo['description']!=nil%>
+				   						<% if repo['description'].length <=200 %>
+				   							<small><%= repo['description']%></small>
+				   						<%else%>
+				   							<small><%= repo['description'][0..200]%></small>
+				   							<br>
+				   							<small>...</small>
+				   						<%end%>
+				   					<%else%>
+				   							<small>...</small>
+				   					<%end%>
+				   				</h6>
+				   			</td>
+				   		</tr>
+				   <% end %>
+				   <% if repo_owner.length>4%>
+				   	<tr>
+				   			<td><small>More...</small></td>
+				   		</tr>
+				   <%end%>
+				</tbody>
+			</table>
+			</div>
+
+			<div class='row'>
+				<table class='table table-bordered table-hover'>
+						<thead>
+							<tr>
+								<% repo_member = @repo.select{|x| x.status=="member"} %>
+								<th>Collaboarate Repository (<%= repo_member.length %>)</th>
+							</tr>
+						</thead>
+					   <tbody>
+					   <% repo_member[0..3].to_a.each do |item|%>
+					   		<% repo = Repository.find(item.repository_id) %>
+					   		<tr>
+					   			<td>
+					   				<h5><%= repo['full_name']%></h5>
+					   				<h6>
+					   					<% if repo['description']!="" && repo['description']!=nil%>
+					   						<% if repo['description'].length <=200 %>
+					   							<small><%= repo['description']%></small>
+					   						<%else%>
+					   							<small><%= repo['description'][0..200]%></small>
+					   							<br>
+					   							<small>...</small>
+					   						<%end%>
+					   					<%else%>
+					   							<small>...</small>
+					   					<%end%>
+					   				</h6>
+					   			</td>
+					   		</tr>
+					   <% end %>
+					   <% if repo_member.length>4%>
+					   	<tr>
+					   			<td><small>More...</small></td>
+					   	</tr>
+					   <%end%>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="col-xs-6 col-md-12">
+			<table class='table table-bordered table-hover'>
+				<colgroup>
+				    <col style="width:10%">
+				    <col style="width:15%">
+				    <col style="width:20%">
+				    <col style="width:40%">
+				</colgroup>  
+					<thead>
+						<tr>
+							<th colspan="4">RecentlyUserEvent</th>
+						</tr>
+						<tr>
+							<th>Date</th>
+							<th>EventType</th>
+							<th>To</th>
+							<th>Message</th>
+						</tr>
+					</thead>
+				   <tbody>
+				   <% @event[0..5].to_a.each do |item|%>
+				   		<tr>
+				   			<td>
+				   				<%= item.created_at.strftime("%m/%d/%Y") %>
+				   			</td>
+				   			<td>
+				   				<%= item.event_type %>
+				   			</td>
+				   			<td>
+				   				<%= Repository.find(item.repository_id).full_name %>
+				   			</td>
+				   			<td>
+				   				<% if item.message.length <= 200%> 
+				   					<%= item.message %>	
+				   					<% else%>
+					   					<%= item.message[0..200] %>	
+										<br>
+					   					<small>Read more...</small>
+					   				<%end%>
+				   			</td>
+
+				   		</tr>
+				   <% end %>
+				</tbody>
+			</table>
+		</div>
+</div>

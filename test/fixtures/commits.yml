@@ -1,0 +1,15 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  sha: MyString
+  before: MyString
+  head: MyString
+  additions: 1
+  deletions: 1
+
+two:
+  sha: MyString
+  before: MyString
+  head: MyString
+  additions: 1
+  deletions: 1
