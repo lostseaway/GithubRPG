@@ -1,5 +1,6 @@
+require 'threadpool'
 class Event < ActiveRecord::Base
-
+	@pool = ThreadPool.new(7)
 	def self.command(cmd)
 		out = []
 		Open3.popen2e(cmd) do |stdin, stdout_err, wait_thr|
@@ -34,65 +35,66 @@ class Event < ActiveRecord::Base
 		user = User.find(user_id)
 		json_user = getJSON("https://api.github.com/users/"+user.login+"/events")
 		json_user.each{|x|
-			if !x["public"] 
-				next
-			end
-			if x["id"] == user.last_modify
-				break
-			end
-
-			if Event.find_by(event_id: x["id"]) != nil
-				break
-			end
-			line = {}
-			line["event_id"] = x["id"]
-			line["user_id"] = user.id
-			repo = Repository.find_by(full_name: x["repo"]["name"])
-			if repo == nil
-				repo = Repository.loadRepo(x["repo"]["name"])
-				if repo == nil
+			@pool.process{
+				if !x["public"] 
 					next
 				end
-			end
-			line["repository_id"] = repo.id
-			line["event_type"] = x["type"]
-			line["message"] = ""
-			line["created_at"] = x["created_at"]
+				if x["id"] == user.last_modify
+					break
+				end
 
-			if line["event_type"] == "PushEvent"
-				payload = x["payload"]
-
-				line["message"] = payload["commits"][0]["message"]
-				payload["commits"].each{|y|
-					commit ={}
-					commit["user_id"] = user.id
-					commit["head"] = payload["head"]
-					commit["before"] = payload["before"]
-					commit["message"] = y["message"].encode("UTF-8")
-					commit["sha"] = y["sha"]
-					commit["commited_at"] = DateTime.strptime(line["created_at"], '%Y-%m-%dT%H:%M:%SZ')
-
-					added = 0
-					changed = 0
-					delete = 0
-					json = getJSON("https://api.github.com/repos/"+repo.full_name+"/compare/"+commit["before"]+"..."+y["sha"])
-					if json.has_key?("message")
+				if Event.find_by(event_id: x["id"]) != nil
+					next
+				end
+				line = {}
+				line["event_id"] = x["id"]
+				line["user_id"] = user.id
+				repo = Repository.find_by(full_name: x["repo"]["name"])
+				if repo == nil
+					repo = Repository.loadRepo(x["repo"]["name"])
+					if repo == nil
 						next
 					end
+				end
+				line["repository_id"] = repo.id
+				line["event_type"] = x["type"]
+				line["message"] = ""
+				line["created_at"] = x["created_at"]
 
-					json["files"].each{|y| 
-						added += y["additions"]
-						changed += y["changes"]
-						delete += y["deletions"]
+				if line["event_type"] == "PushEvent"
+					payload = x["payload"]
+
+					line["message"] = payload["commits"][0]["message"]
+					payload["commits"].each{|y|
+						commit ={}
+						commit["user_id"] = user.id
+						commit["head"] = payload["head"]
+						commit["before"] = payload["before"]
+						commit["message"] = y["message"].encode("UTF-8")
+						commit["sha"] = y["sha"]
+						commit["commited_at"] = DateTime.strptime(line["created_at"], '%Y-%m-%dT%H:%M:%SZ')
+
+						added = 0
+						changed = 0
+						delete = 0
+						json = getJSON("https://api.github.com/repos/"+repo.full_name+"/compare/"+commit["before"]+"..."+y["sha"])
+						if json.has_key?("message")
+							next
+						end
+
+						json["files"].each{|y| 
+							added += y["additions"]
+							changed += y["changes"]
+							delete += y["deletions"]
+						}
+						commit["additions"] = added
+						commit["modify"] = changed
+						commit["deletions"] = delete
+						Commit.create(commit)
 					}
-					commit["additions"] = added
-					commit["modify"] = changed
-					commit["deletions"] = delete
-					Commit.create(commit)
-				}
-			end
-			create(line)
-			
+				end
+				create(line)
+			}
 
 		}
 

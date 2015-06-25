@@ -1,5 +1,6 @@
+require 'threadpool'
 class Commit < ActiveRecord::Base
-
+	@pool = ThreadPool.new(15)	
 	def self.command(cmd)
 		out = []
 		Open3.popen2e(cmd) do |stdin, stdout_err, wait_thr|
@@ -16,10 +17,16 @@ class Commit < ActiveRecord::Base
 		return out.join("")
 	end
 
+	def self.Ncommand(cmd)
+		puts cmd
+		return `#{cmd}`
+	end
+
 	def self.getJSON(url)
 		cmd = "curl -sS -u lostseaway:64120430d86ac36403ab55a826b49a5b3893e7c5 "
 		cmd += url
-		data = command(cmd)
+		# data = command(cmd)
+		data = Ncommand(cmd)
 		return JSON.parse(data)
 	end
 
@@ -34,6 +41,46 @@ class Commit < ActiveRecord::Base
 		return tag[0].split(":")[1].chomp.gsub("\"","").gsub(" ","")
 	end
 
+	def self.loadSingleCommit(commit,full_name,user_id)
+		if commit.class.to_s=="Array"
+			return 
+		end
+		sha = commit["sha"]
+		check = Commit.find_by(sha: sha)
+		if check != nil
+			return
+		end
+
+		
+		com = {}
+		com["user_id"] = user_id
+		com["sha"] = sha
+		com["before"] = commit["parents"] == [] ? "" : commit["parents"][0]["sha"]
+		com["message"] = commit["commit"]["message"].encode("UTF-8")
+		com["commited_at"] = DateTime.strptime(commit["commit"]["author"]["date"], '%Y-%m-%dT%H:%M:%SZ')
+
+		added = 0
+		changed = 0
+		delete = 0
+		puts ">>>BEFORE<<<<"
+		json = getJSON("https://api.github.com/repos/"+full_name+"/compare/"+com["before"]+"..."+sha)
+		puts ">>>AFTER<<<<"
+		if json.has_key?("message")
+			return
+		end
+		puts "after"
+		json["files"].each{|y| 
+			added += y["additions"]
+			changed += y["changes"]
+			delete += y["deletions"]
+		}
+		com["additions"] = added
+		com["modify"] = changed
+		com["deletions"] = delete
+		Commit.create(com)
+		return 
+	end
+	
 	def self.loadAllCommits(user_id)
 		user = User.find(user_id)
 		repos = UserRepository.where(user_id: user_id)
@@ -43,43 +90,19 @@ class Commit < ActiveRecord::Base
 			if tag != repo_full.match 
 				commits = getJSON("https://api.github.com/repos/"+repo_full.full_name+"/commits?author="+user.login)
 				commits.each{|commit| 
-					if commit.class.to_s=="Array"
-						next
-					end
-					sha = commit["sha"]
-					check = Commit.find_by(sha: sha)
-					if check != nil
-						next
-					end
-
-					com = {}
-					com["user_id"] = user_id
-					com["sha"] = sha
-					com["before"] = commit["parents"] == [] ? "" : commit["parents"][0]["sha"]
-					com["message"] = commit["commit"]["message"].encode("UTF-8")
-					com["commited_at"] = DateTime.strptime(commit["commit"]["author"]["date"], '%Y-%m-%dT%H:%M:%SZ')
-
-					added = 0
-					changed = 0
-					delete = 0
-
-					json = getJSON("https://api.github.com/repos/"+repo_full.full_name+"/compare/"+com["before"]+"..."+sha)
-					if json.has_key?("message")
-						next
-					end
-					
-					json["files"].each{|y| 
-						added += y["additions"]
-						changed += y["changes"]
-						delete += y["deletions"]
-					}
-					com["additions"] = added
-					com["modify"] = changed
-					com["deletions"] = delete
-					Commit.create(com)
+					@pool.process{ loadSingleCommit(commit,repo_full.full_name,user_id)}
+					# loadSingleCommit(commit,repo_full.full_name,user_id)
 				}
 			end
 		}
+		backlog = @pool.backlog
+		while @pool.backlog !=0
+			if backlog != backlog
+				puts "HAVE #{@pool.backlog} LEFT"
+				backlog = @pool.backlog
+			end
+		end
+
 	end
 
 
