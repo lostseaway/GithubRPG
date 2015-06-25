@@ -28,29 +28,6 @@ class UserController < ApplicationController
 	end
 
 
-	def loadLang(user_id)
-		# lan = {}
-		# lan['byte'] = {}
-		# @repo.select{|x| x.status=="owner"}.each{|x|
-		# 	p x
-		# 	repolang = LangRepository.getLangRepo(x.repository_id)
-		# 	repolang.each{|y|
-		# 		if lan['byte'][y.lang_id] !=nil
-		# 			lan['byte'][y.lang_id] += y.byte
-		# 		else
-		# 			lan['byte'][y.lang_id] = y.byte
-		# 		end
-		# 	}
-		# }
-		# return lan
-
-		sql = "SELECT SUM(byte) , lang_repositories.lang_id FROM user_repositories RIGHT JOIN lang_repositories ON user_repositories.repository_id = lang_repositories.repository_id WHERE user_repositories.user_id = "+user_id.to_s+" AND user_repositories.status = \"owner\" GROUP BY lang_repositories.lang_id"
-		records_array = ActiveRecord::Base.connection.execute(sql).to_a
-
-		return records_array
-	end
-
-
 	def createDayGraph(commits)
 		gbyd = {}
 		(1..31).to_a.each{|x| 

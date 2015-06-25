@@ -75,7 +75,14 @@ class UserRepository < ActiveRecord::Base
 		end
 	end
 
-	def self.getUserRepo(user_id)
+	def self.getQ(user_id)
+		sql = "SELECT repositories.name , repositories.description , user_repositories.status,repositories.full_name FROM user_repositories LEFT JOIN repositories ON user_repositories.repository_id = repositories.id WHERE user_repositories.user_id = "+user_id.to_s+" ORDER BY repositories.created_at DESC"
+		repo = ActiveRecord::Base.connection.execute(sql).to_a
+
+		return repo
+	end
+
+	def self.getUserRepoL(user_id)
 		repo = self.where(user_id: user_id)
 		user = User.find(user_id)
 		tag = getTag("https://api.github.com/users/"+user.login+"/repos?type=all")
@@ -86,6 +93,24 @@ class UserRepository < ActiveRecord::Base
 			user.update_attributes(repo_tag:tag)
 			update(user)
 			repo = self.where(user_id: user_id)
+		end
+
+		return repo
+	end
+
+
+	def self.getUserRepo(user_id)
+		repo = getQ(user_id)
+		user = User.find(user_id)
+		getQ(user_id)
+		tag = getTag("https://api.github.com/users/"+user.login+"/repos?type=all")
+		if repo.length == 0
+			self.load(user_id)
+			repo = getQ(user_id)
+		elsif user.repo_tag != tag
+			user.update_attributes(repo_tag:tag)
+			update(user)
+			repo = getQ(user_id)
 		end
 
 		return repo

@@ -174,21 +174,20 @@ function drawBasic() {
 				<table class='table table-bordered table-hover' style="table-layout: fixed; width: 100%">
 					<thead>
 						<tr>
-							<% repo_owner = @repo.select{|x| x.status=="owner"} %>
+							<% repo_owner = @repo.select{|x| x[2]=="owner"} %>
 							<th>Own Repository (<%= repo_owner.length %>)</th>
 						</tr>
 					</thead>
 				   <tbody>
-				   <% repo_owner[0..3].to_a.each do |item|%>
-				   		<% repo = Repository.find(item.repository_id) %>
+				   <% repo_owner[0..3].each do |item|%>
 				   		<tr>
-				   			<td style="word-wrap: break-word"><h5><%= repo['name']%></h5>
+				   			<td style="word-wrap: break-word"><h5><%= item[0]%></h5>
 				   				<h6>
-				   					<% if repo['description']!="" && repo['description']!=nil%>
-				   						<% if repo['description'].length <=200 %>
-				   							<small><%= repo['description']%></small>
+				   					<% if item[1]!="" && item[1]!=nil%>
+				   						<% if item[1].length <=200 %>
+				   							<small><%= item[1]%></small>
 				   						<%else%>
-				   							<small><%= repo['description'][0..200]%></small>
+				   							<small><%= item[1][0..200]%></small>
 				   							<br>
 				   							<small>...</small>
 				   						<%end%>
@@ -212,22 +211,21 @@ function drawBasic() {
 				<table class='table table-bordered table-hover'>
 						<thead>
 							<tr>
-								<% repo_member = @repo.select{|x| x.status=="member"} %>
+								<% repo_member = @repo.select{|x| x[2]=="member"} %>
 								<th>Collaboarate Repository (<%= repo_member.length %>)</th>
 							</tr>
 						</thead>
 					   <tbody>
 					   <% repo_member[0..3].to_a.each do |item|%>
-					   		<% repo = Repository.find(item.repository_id) %>
 					   		<tr>
 					   			<td>
-					   				<h5><%= repo['full_name']%></h5>
+					   				<h5><%= item[3]%></h5>
 					   				<h6>
-					   					<% if repo['description']!="" && repo['description']!=nil%>
-					   						<% if repo['description'].length <=200 %>
-					   							<small><%= repo['description']%></small>
+					   					<% if item[1]!="" && item[1]!=nil%>
+					   						<% if item[1].length <=200 %>
+					   							<small><%= item[1]%></small>
 					   						<%else%>
-					   							<small><%= repo['description'][0..200]%></small>
+					   							<small><%= item[1][0..200]%></small>
 					   							<br>
 					   							<small>...</small>
 					   						<%end%>
