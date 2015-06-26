@@ -145,7 +145,7 @@ function drawBasic() {
 	    	</a>
 	    </div>
 
-	    <div class="col-xs-6 col-md-5">
+	    <div class="col-xs-6 col-md-4">
 		    <div class="panel panel-default" style="height:132px">
 			  <div class="panel-body" style="padding:0px;padding-left:8px">
 			    <h6>Name : <%= @user["name"] %></h6>
@@ -156,96 +156,118 @@ function drawBasic() {
 			  </div>
 			</div>
 		</div>
+
+		<div class="col-xs-3 col-md-2">
+		    <div class="panel panel-default" style="height:132px">
+			  <div class="panel-heading">
+			  	<h4>Follower</h4>
+			  </div>
+			  <div class="panel-body">
+					<h6><%= @user.follower %></h6>
+			  </div>
+			</div>
+		</div>
+
+		<div class="col-xs-3 col-md-2">
+		   <div class="panel panel-default" style="height:132px">
+			  <div class="panel-heading">
+			  	<h4>Population</h4>
+			  </div>
+			  <div class="panel-body">
+					<h6>n</h6>
+			  </div>
+			</div>
+		</div>
+
 	</div>
-		<div class="col-xs-6 col-md-9">
-			<div class="panel panel-default"  align="left">
-				<div class="row">
-					<div id="bytechart" style="width: 45%; display: inline-block"></div>
-					<div id="chart_mo" style="width: 50%; display: inline-block"></div>
-				</div>
-				<div id="chart_day" style="width: 100%;"></div>
-				<div id="chart_hr" style="width: 100%;"></div>
-				<div id="chart_dfw" style="width: 100%;"></div>
+	<div class="col-xs-12 col-md-9">
+		<div class="panel panel-default"  align="left">
+			<div class="row">
+				<div id="bytechart" style="width: 45%; display: inline-block"></div>
+				<div id="chart_mo" style="width: 50%; display: inline-block"></div>
 			</div>
+			<div id="chart_day" style="width: 100%;"></div>
+			<div id="chart_hr" style="width: 100%;"></div>
+			<div id="chart_dfw" style="width: 100%;"></div>
 		</div>
+	</div>
 
-		<div class="col-xs-3 col-md-3">
-			<div class='row'>
-				<table class='table table-bordered table-hover' style="table-layout: fixed; width: 100%">
-					<thead>
-						<tr>
-							<% repo_owner = @repo.select{|x| x[2]=="owner"} %>
-							<th>Own Repository (<%= repo_owner.length %>)</th>
-						</tr>
-					</thead>
-				   <tbody>
-				   <% repo_owner[0..3].each do |item|%>
-				   		<tr>
-				   			<td style="word-wrap: break-word"><h5><%= item[0]%></h5>
-				   				<h6>
-				   					<% if item[1]!="" && item[1]!=nil%>
-				   						<% if item[1].length <=200 %>
-				   							<small><%= item[1]%></small>
-				   						<%else%>
-				   							<small><%= item[1][0..200]%></small>
-				   							<br>
-				   							<small>...</small>
-				   						<%end%>
-				   					<%else%>
-				   							<small>...</small>
-				   					<%end%>
-				   				</h6>
-				   			</td>
-				   		</tr>
-				   <% end %>
-				   <% if repo_owner.length>4%>
+	<div class="col-xs-6 col-md-3">
+		<table class='table table-bordered table-hover' style="table-layout: fixed; width: 100%">
+			<thead>
+				<tr>
+					<% repo_owner = @repo.select{|x| x[2]=="owner"} %>
+					<th>Own Repository (<%= repo_owner.length %>)</th>
+				</tr>
+			</thead>
+		    <tbody>
+			   <% repo_owner[0..3].each do |item|%>
 				   	<tr>
-				   			<td><small>More...</small></td>
-				   		</tr>
-				   <%end%>
-				</tbody>
-			</table>
-			</div>
+			   			<td style="word-wrap: break-word">
+			   				<h5><%= item[0]%></h5>
+				   			<h6>
+				   				<% if item[1]!="" && item[1]!=nil%>
+			   						<% if item[1].length <=200 %>
+			   							<small><%= item[1]%></small>
+			   						<%else%>
+			   							<small><%= item[1][0..200]%></small>
+			   							<br>
+			   							<small>...</small>
+			   						<%end%>
+			   					<%else%>
+			   							<small>...</small>
+			   					<%end%>
+			   				</h6>
+			   			</td>
+			   		</tr>
+			   <% end %>
+			   <% if repo_owner.length>4%>
+				   	<tr>
+				   		<td><small>More...</small></td>
+				   	</tr>
+			   <%end%>
+			</tbody>
+		</table>
+	</div>
 
-			<div class='row'>
-				<table class='table table-bordered table-hover'>
-						<thead>
-							<tr>
-								<% repo_member = @repo.select{|x| x[2]=="member"} %>
-								<th>Collaboarate Repository (<%= repo_member.length %>)</th>
-							</tr>
-						</thead>
-					   <tbody>
-					   <% repo_member[0..3].to_a.each do |item|%>
-					   		<tr>
-					   			<td>
-					   				<h5><%= item[3]%></h5>
-					   				<h6>
-					   					<% if item[1]!="" && item[1]!=nil%>
-					   						<% if item[1].length <=200 %>
-					   							<small><%= item[1]%></small>
-					   						<%else%>
-					   							<small><%= item[1][0..200]%></small>
-					   							<br>
-					   							<small>...</small>
-					   						<%end%>
-					   					<%else%>
-					   							<small>...</small>
-					   					<%end%>
-					   				</h6>
-					   			</td>
-					   		</tr>
-					   <% end %>
-					   <% if repo_member.length>4%>
-					   	<tr>
-					   			<td><small>More...</small></td>
-					   	</tr>
-					   <%end%>
-					</tbody>
-				</table>
-			</div>
-		</div>
-		<div class="col-xs-6 col-md-12">
+	<div class="col-xs-6 col-md-3">
+		<table class='table table-bordered table-hover'>
+				<thead>
+					<tr>
+						<% repo_member = @repo.select{|x| x[2]=="member"} %>
+						<th>Collaboarate Repository (<%= repo_member.length %>)</th>
+					</tr>
+				</thead>
+			   <tbody>
+			   <% repo_member[0..3].to_a.each do |item|%>
+			   		<tr>
+			   			<td>
+			   				<h5><%= item[3]%></h5>
+			   				<h6>
+			   					<% if item[1]!="" && item[1]!=nil%>
+			   						<% if item[1].length <=200 %>
+			   							<small><%= item[1]%></small>
+			   						<%else%>
+			   							<small><%= item[1][0..200]%></small>
+			   							<br>
+			   							<small>...</small>
+			   						<%end%>
+			   					<%else%>
+			   							<small>...</small>
+			   					<%end%>
+			   				</h6>
+			   			</td>
+			   		</tr>
+			   <% end %>
+			   <% if repo_member.length>4%>
+			   	<tr>
+			   			<td><small>More...</small></td>
+			   	</tr>
+			   <%end%>
+			</tbody>
+		</table>
+	</div>
+		<div class="col-xs-12 col-md-12">
 			<table class='table table-bordered table-hover'>
 				<colgroup>
 				    <col style="width:10%">
@@ -268,7 +290,7 @@ function drawBasic() {
 				   <% @event[0..5].to_a.each do |item|%>
 				   		<tr>
 				   			<td>
-				   				<%= item.created_at.strftime("%m/%d/%Y") %>
+				   				<%= item.created_at.strftime("%d/%m/%Y") %>
 				   			</td>
 				   			<td>
 				   				<%= item.event_type %>

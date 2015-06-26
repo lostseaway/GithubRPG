@@ -31,72 +31,112 @@ class Event < ActiveRecord::Base
 		return data.split("\n").select{|x| x.include?("ETag:")}[0].split(":")[1].chomp.gsub("\"","").gsub(" ","")
 	end
 
+	def self.loadSingleEvent(x,user)
+		if !x["public"] 
+			return true
+		end
+		if x["id"] == user.last_modify
+			return false
+		end
+		puts "IN"
+		if Event.find_by(event_id: x["id"]) != nil
+			return true
+		end
+		line = {}
+		line["event_id"] = x["id"]
+		line["user_id"] = user.id
+		repo = Repository.find_by(full_name: x["repo"]["name"])
+		if repo == nil
+			repo = Repository.loadRepo(x["repo"]["name"])
+			if repo == nil
+				return true
+			end
+		end
+		line["repository_id"] = repo.id
+		line["event_type"] = x["type"]
+		line["message"] = ""
+		line["created_at"] = x["created_at"]
+
+		if line["event_type"] == "PushEvent"
+			payload = x["payload"]
+
+			line["message"] = payload["commits"][0]["message"]
+			payload["commits"].each{|y|
+				commit ={}
+				commit["user_id"] = user.id
+				commit["head"] = payload["head"]
+				commit["before"] = payload["before"]
+				commit["message"] = y["message"].encode("UTF-8")
+				commit["sha"] = y["sha"]
+				commit["commited_at"] = DateTime.strptime(line["created_at"], '%Y-%m-%dT%H:%M:%SZ')
+
+				added = 0
+				changed = 0
+				delete = 0
+				json = getJSON("https://api.github.com/repos/"+repo.full_name+"/compare/"+commit["before"]+"..."+y["sha"])
+				if json.has_key?("message")
+					next
+				end
+
+				json["files"].each{|y| 
+					added += y["additions"]
+					changed += y["changes"]
+					delete += y["deletions"]
+				}
+				commit["additions"] = added
+				commit["modify"] = changed
+				commit["deletions"] = delete
+				Commit.create(commit)
+			}
+		end
+		create(line)
+		return true
+	end
+
 	def self.loadAllEvent(user_id)
 		user = User.find(user_id)
 		json_user = getJSON("https://api.github.com/users/"+user.login+"/events")
-		json_user.each{|x|
-			@pool.process{
-				if !x["public"] 
-					next
-				end
-				if x["id"] == user.last_modify
-					break
-				end
-
-				if Event.find_by(event_id: x["id"]) != nil
-					next
-				end
-				line = {}
-				line["event_id"] = x["id"]
-				line["user_id"] = user.id
-				repo = Repository.find_by(full_name: x["repo"]["name"])
-				if repo == nil
-					repo = Repository.loadRepo(x["repo"]["name"])
-					if repo == nil
-						next
-					end
-				end
-				line["repository_id"] = repo.id
-				line["event_type"] = x["type"]
-				line["message"] = ""
-				line["created_at"] = x["created_at"]
-
-				if line["event_type"] == "PushEvent"
-					payload = x["payload"]
-
-					line["message"] = payload["commits"][0]["message"]
-					payload["commits"].each{|y|
-						commit ={}
-						commit["user_id"] = user.id
-						commit["head"] = payload["head"]
-						commit["before"] = payload["before"]
-						commit["message"] = y["message"].encode("UTF-8")
-						commit["sha"] = y["sha"]
-						commit["commited_at"] = DateTime.strptime(line["created_at"], '%Y-%m-%dT%H:%M:%SZ')
-
-						added = 0
-						changed = 0
-						delete = 0
-						json = getJSON("https://api.github.com/repos/"+repo.full_name+"/compare/"+commit["before"]+"..."+y["sha"])
-						if json.has_key?("message")
-							next
-						end
-
-						json["files"].each{|y| 
-							added += y["additions"]
-							changed += y["changes"]
-							delete += y["deletions"]
-						}
-						commit["additions"] = added
-						commit["modify"] = changed
-						commit["deletions"] = delete
-						Commit.create(commit)
-					}
-				end
-				create(line)
-			}
+		json_user[0..5].each{|x|
+			# @pool.process{
+				loadSingleEvent(x,user)
+			# }
 
 		}
+		backlog = @pool.backlog
+		puts "Wait at event #{backlog}"
+		while @pool.backlog !=0
+			if backlog != backlog
+				puts "HAVE #{@pool.backlog} LEFT"
+				backlog = @pool.backlog
+			end
+		end
+
+
+		tag = getTag("https://api.github.com/users/"+user.login+"/events")
+		user.update_attributes(last_modify:json_user[0]["id"],match:tag)
+		user.save
+	end
+
+	def self.updateEvent(user_id)
+		user = User.find(user_id)
+		json_user = getJSON("https://api.github.com/users/"+user.login+"/events")
+		json_user.each{|x|
+			# @pool.process{
+				if !loadSingleEvent(x,user)
+					break
+				end
+			# }
+
+		}
+		backlog = @pool.backlog
+		p backlog
+		while @pool.backlog !=0
+			if backlog != backlog
+				puts "HAVE #{@pool.backlog} LEFT"
+				backlog = @pool.backlog
+			end
+		end
+
 
 		tag = getTag("https://api.github.com/users/"+user.login+"/events")
 		user.update_attributes(last_modify:json_user[0]["id"],match:tag)
@@ -116,7 +156,7 @@ class Event < ActiveRecord::Base
 				event = Event.where(user_id: user.id).order('created_at DESC')
 				return event
 			else
-				loadAllEvent(user_id)
+				updateEvent(user_id)
 				event = Event.where(user_id: user.id).order('created_at DESC')
 				return event
 			end

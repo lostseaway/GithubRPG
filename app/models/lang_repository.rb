@@ -51,9 +51,20 @@ class LangRepository < ActiveRecord::Base
 			repos = UserRepository.getUserRepoL(user_id)
 			repos.each{|x| 
 
-				@pool.process{loadLang(x.repository_id)}
+				# @pool.process{
+					loadLang(x.repository_id)
+				# }
 
 			}
+
+			backlog = @pool.backlog
+			puts "FROM LANG_REPO #{backlog}"
+			while @pool.backlog !=0
+				if backlog != backlog
+					puts "HAVE #{@pool.backlog} LEFT"
+					backlog = @pool.backlog
+				end
+			end
 			sql = "SELECT SUM(byte) , lang_repositories.lang_id FROM user_repositories RIGHT JOIN lang_repositories ON user_repositories.repository_id = lang_repositories.repository_id WHERE user_repositories.user_id = "+user_id.to_s+" AND user_repositories.status = \"owner\" GROUP BY lang_repositories.lang_id"
 			lang = ActiveRecord::Base.connection.execute(sql).to_a	
 		end

@@ -90,7 +90,9 @@ class Commit < ActiveRecord::Base
 			if tag != repo_full.match 
 				commits = getJSON("https://api.github.com/repos/"+repo_full.full_name+"/commits?author="+user.login)
 				commits.each{|commit| 
-					@pool.process{ loadSingleCommit(commit,repo_full.full_name,user_id)}
+					# @pool.process{ 
+						loadSingleCommit(commit,repo_full.full_name,user_id)
+					# }
 					# loadSingleCommit(commit,repo_full.full_name,user_id)
 				}
 			end
