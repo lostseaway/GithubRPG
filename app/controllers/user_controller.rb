@@ -28,45 +28,6 @@ class UserController < ApplicationController
 	end
 
 
-	def createDayGraph(commits)
-		gbyd = {}
-		(1..31).to_a.each{|x| 
-			if x < 10
-				gbyd["0"+x.to_s] = commits.count{|y| y["day"] == "0"+x.to_s}
-			else
-				gbyd[x.to_s] = commits.count{|y| y["day"] == x.to_s}
-			end
-
-		}
-		# p gbyd.to_a
-		return gbyd.to_a
-	end
-
-	def createHrGraph(commits)
-		gbyhr = {}
-		(0..23).to_a.each{|x| 
-			if x < 10
-				gbyhr["0"+x.to_s] = commits.count{|y| y["hr"] == "0"+x.to_s}
-			else
-				gbyhr[x.to_s] = commits.count{|y| y["hr"] == x.to_s}
-			end
-
-		}
-		# p gbyhr.to_a
-		return gbyhr.to_a
-	end
-
-	
-	def createDFWGraph(commits)
-		gbydfw = {}
-		day = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
-		day.to_a.each{|x| 
-				gbydfw[x] = commits.count{|y| y["dfw"] == x}
-		}
-		# p gbydfw.to_a
-		return gbydfw.to_a
-	end	
-
 	def getuser
 		id = params[:id]
 		puts "LOADING USER DATA..."

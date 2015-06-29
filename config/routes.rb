@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   root 'welcome#index'
+  get '/' => 'welcome#index'
   get 'user/:id' => 'user#getuser'
   post 'user/loading' => 'user#loading'
   get 'search' => 'search#index'
