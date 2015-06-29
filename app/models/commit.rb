@@ -107,6 +107,32 @@ class Commit < ActiveRecord::Base
 
 	end
 
+	def self.getGraph(user_id,arr,param)
+		out = []
+		commits = Commit.where(user_id: user_id).map{|x| [x.commited_at.strftime(param),x.additions,x.modify,x.deletions]}
+		arr.each{|x| 
+			commit = commits.select{|y| y[0] == x.to_s}
+			line = {}
+			line["n"] = x.to_s
+			line["count"] = commit.length
+			if commit.length == 0
+				line["additions"] = 0
+				line["modify"] = 0
+				line["deletions"] = 0
+				line["total"] = 0
+
+			else
+				line["additions"] = commit.map{|x| x[1]}.inject(:+)
+				line["modify"] = commit.map{|x| x[2]}.inject(:+)
+				line["deletions"] = commit.map{|x| x[3]}.inject(:+)
+				line["total"] =  line["modify"] + line["deletions"]
+			end
+			out << line
+
+		}
+		# p out.to_a
+		return out
+	end
 
 	def self.getNumberByDay(user_id)
 		gbyd = {}
@@ -123,18 +149,36 @@ class Commit < ActiveRecord::Base
 	end
 
 	def self.getNumberByHr(user_id)
-		gbyhr = {}
-		commits = Commit.where(user_id: user_id).map{|x| x.commited_at.strftime("%H")}
-		(0..23).to_a.each{|x| 
+		gbyhr = []
+		commits = Commit.where(user_id: user_id).map{|x| [x.commited_at.strftime("%H"),x.additions,x.modify,x.deletions]}
+		(1..24).to_a.each{|x| 
+			line = {}
 			if x < 10
-				gbyhr["0"+x.to_s] = commits.count{|y| y == "0"+x.to_s}
+				commit = commits.select{|y| y[0] == "0"+x.to_s}
 			else
-				gbyhr[x.to_s] = commits.count{|y| y == x.to_s}
+				commit = commits.select{|y| y[0] == x.to_s}
 			end
+
+
+			line["n"] = x<10? "0"+x.to_s : x.to_s
+			line["count"] = commit.length
+			if commit.length == 0
+				line["additions"] = 0
+				line["modify"] = 0
+				line["deletions"] = 0
+				line["total"] = 0
+
+			else
+				line["additions"] = commit.map{|x| x[1]}.inject(:+)
+				line["modify"] = commit.map{|x| x[2]}.inject(:+)
+				line["deletions"] = commit.map{|x| x[3]}.inject(:+)
+				line["total"] =  line["additions"] + line["modify"] + line["deletions"]
+			end
+			gbyhr << line
 
 		}
 		# p gbyhr.to_a
-		return gbyhr.to_a
+		return gbyhr
 	end
 
 	def self.getNumberByDFW(user_id)

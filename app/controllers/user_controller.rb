@@ -28,6 +28,45 @@ class UserController < ApplicationController
 	end
 
 
+	def createDayGraph(commits)
+		gbyd = {}
+		(1..31).to_a.each{|x| 
+			if x < 10
+				gbyd["0"+x.to_s] = commits.count{|y| y["day"] == "0"+x.to_s}
+			else
+				gbyd[x.to_s] = commits.count{|y| y["day"] == x.to_s}
+			end
+
+		}
+		# p gbyd.to_a
+		return gbyd.to_a
+	end
+
+	def createHrGraph(commits)
+		gbyhr = {}
+		(0..23).to_a.each{|x| 
+			if x < 10
+				gbyhr["0"+x.to_s] = commits.count{|y| y["hr"] == "0"+x.to_s}
+			else
+				gbyhr[x.to_s] = commits.count{|y| y["hr"] == x.to_s}
+			end
+
+		}
+		# p gbyhr.to_a
+		return gbyhr.to_a
+	end
+
+	
+	def createDFWGraph(commits)
+		gbydfw = {}
+		day = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+		day.to_a.each{|x| 
+				gbydfw[x] = commits.count{|y| y["dfw"] == x}
+		}
+		# p gbydfw.to_a
+		return gbydfw.to_a
+	end	
+
 	def getuser
 		id = params[:id]
 		puts "LOADING USER DATA..."
@@ -48,9 +87,9 @@ class UserController < ApplicationController
 		# @commits = getTL(id)
 		# p @commits[0]
 		puts "DONE!"
-		@gbyd = Commit.getNumberByDay(@user.id)
+		@gbyd = Commit.getGraph(@user.id,(1..31).to_a.map{|x| x < 10 ? "0"+x.to_s : x.to_s},"%d")
 		@gbyhr = Commit.getNumberByHr(@user.id)
-		@gbydfw = Commit.getNumberByDFW(@user.id)
+		@gbydfw = Commit.getGraph(@user.id,["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],"%a")
 		@modifyNo = Commit.getNumberModify(@user.id)
 
 		render 'index'

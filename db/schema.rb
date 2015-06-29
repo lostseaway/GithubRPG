@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150624052001) do
+ActiveRecord::Schema.define(version: 20150629083140) do
 
   create_table "commits", force: :cascade do |t|
     t.string   "sha",         limit: 255
@@ -32,9 +32,9 @@ ActiveRecord::Schema.define(version: 20150624052001) do
   create_table "events", force: :cascade do |t|
     t.string   "event_id",      limit: 255
     t.string   "event_type",    limit: 255
-    t.string   "message",       limit: 255
-    t.datetime "created_at",                null: false
-    t.datetime "updated_at",                null: false
+    t.text     "message",       limit: 65535
+    t.datetime "created_at",                  null: false
+    t.datetime "updated_at",                  null: false
     t.integer  "user_id",       limit: 4
     t.integer  "repository_id", limit: 4
   end
