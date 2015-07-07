@@ -25,7 +25,8 @@ class LangRepository < ActiveRecord::Base
 	end
 
 	def self.loadLang(repo_id)
-		full_name = Repository.find(repo_id).full_name
+		repo = Repository.find(repo_id)
+		full_name = repo.full_name
 		json = getJSON("https://api.github.com/repos/"+full_name+"/languages")
 
 		json.each{|x|
@@ -36,6 +37,13 @@ class LangRepository < ActiveRecord::Base
 
 			self.create(byte: x[1],lang_id: lang.id,repository_id: repo_id)
 		}
+		if json == {}
+			return
+		end
+		max = json.min{|x| x[1]}
+		lang = Lang.find_by(lang:max[0])
+		repo.update_attributes(lang_id:lang.id)
+
 	end
 
 	def self.getLangRepo(user_id)

@@ -88,8 +88,9 @@ class UserController < ApplicationController
 		# p @commits[0]
 		puts "DONE!"
 		@gbyd = Commit.getGraph(@user.id,(1..31).to_a.map{|x| x < 10 ? "0"+x.to_s : x.to_s},"%d")
-		@gbyhr = Commit.getNumberByHr(@user.id)
+		@gbyhr = Commit.getGraph(@user.id,(1..24).to_a.map{|x| x < 10 ? "0"+x.to_s : x.to_s},"%H")
 		@gbydfw = Commit.getGraph(@user.id,["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],"%a")
+		# @modifyNo = {}
 		@modifyNo = Commit.getNumberModify(@user.id)
 
 		render 'index'
@@ -98,6 +99,10 @@ class UserController < ApplicationController
 	def loading
 		@id = params[:id]
 		render 'loading'
+	end
+
+	def testGraph
+		render 'graph'
 	end
 
 

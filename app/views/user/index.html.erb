@@ -28,7 +28,7 @@
     var data = google.visualization.arrayToDataTable([
       ['Action', 'Byte-Of-Code'],
       ["Additions",  <%= @modifyNo["added"]%>],
-      ["Changes",  <%= @modifyNo["modify"] %>],
+      // ["Changes",  <%= @modifyNo["modify"] %>],
       ["Deletions",  <%= @modifyNo["delete"] %>],
     ]);
 
@@ -60,7 +60,7 @@ function drawBasic() {
 
       var options = {
         hAxis: {
-          title: 'Time'
+          title: 'Date'
         },
         vAxis: {
         	0:{title: 'Number of Commit'},

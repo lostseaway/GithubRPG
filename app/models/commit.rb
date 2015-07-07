@@ -41,7 +41,7 @@ class Commit < ActiveRecord::Base
 		return tag[0].split(":")[1].chomp.gsub("\"","").gsub(" ","")
 	end
 
-	def self.loadSingleCommit(commit,full_name,user_id)
+	def self.loadSingleCommit(commit,full_name,user_id,repo_id)
 		if commit.class.to_s=="Array"
 			return 
 		end
@@ -55,29 +55,58 @@ class Commit < ActiveRecord::Base
 		com = {}
 		com["user_id"] = user_id
 		com["sha"] = sha
-		com["before"] = commit["parents"] == [] ? "" : commit["parents"][0]["sha"]
+
 		com["message"] = commit["commit"]["message"].encode("UTF-8")
 		com["commited_at"] = DateTime.strptime(commit["commit"]["author"]["date"], '%Y-%m-%dT%H:%M:%SZ')
 
-		added = 0
-		changed = 0
-		delete = 0
-		puts ">>>BEFORE<<<<"
-		json = getJSON("https://api.github.com/repos/"+full_name+"/compare/"+com["before"]+"..."+sha)
-		puts ">>>AFTER<<<<"
+		json = getJSON("https://api.github.com/repos/"+full_name+"/commits/"+sha)
 		if json.has_key?("message")
 			return
 		end
-		puts "after"
-		json["files"].each{|y| 
-			added += y["additions"]
-			changed += y["changes"]
-			delete += y["deletions"]
+
+		com["total"] = json["stats"]["total"]
+
+		com["repository_id"] = repo_id
+		com["additions"] = json["stats"]["additions"]
+		com["deletions"] = json["stats"]["deletions"]
+		ncom = Commit.create(com)
+		commitfile = []
+		files = json["files"]
+		files.each{|file|
+			ft = file["filename"].split(".")
+			if ft.length <= 1
+				next
+			end
+			ft = ft[-1]
+			puts 'File : #{file["filename"]} File Type : #{ft}'
+
+			if commitfile.length == 0
+				nt = {}
+				nt["commit_id"] = ncom.id
+				nt["file_type_id"] = ft
+				nt["additions"] = file["additions"]
+				nt["deletions"] = file["deletions"]
+				nt["change"] = file["changes"]
+				commitfile << nt
+			else
+				st = commitfile.select{|x| x["file_type_id"]==ft}
+				if st.length == 0
+					nt = {}
+					nt["commit_id"] = ncom.id
+					nt["file_type_id"] = ft
+					nt["additions"] = file["additions"]
+					nt["deletions"] = file["deletions"]
+					nt["change"] = file["changes"]
+					commitfile << nt
+				else
+					st[0]["additions"] = file["additions"]
+					st[0]["deletions"] = file["deletions"]
+					st[0]["change"] = file["changes"]
+				end
+			end
 		}
-		com["additions"] = added
-		com["modify"] = changed
-		com["deletions"] = delete
-		Commit.create(com)
+		commitfile.each{|x| CommitFile.addFile(ncom.id,x)}
+
 		return 
 	end
 	
@@ -91,9 +120,8 @@ class Commit < ActiveRecord::Base
 				commits = getJSON("https://api.github.com/repos/"+repo_full.full_name+"/commits?author="+user.login)
 				commits.each{|commit| 
 					# @pool.process{ 
-						loadSingleCommit(commit,repo_full.full_name,user_id)
+						loadSingleCommit(commit,repo_full.full_name,user_id,repo_full.id)
 					# }
-					# loadSingleCommit(commit,repo_full.full_name,user_id)
 				}
 			end
 		}
@@ -109,7 +137,7 @@ class Commit < ActiveRecord::Base
 
 	def self.getGraph(user_id,arr,param)
 		out = []
-		commits = Commit.where(user_id: user_id).map{|x| [x.commited_at.strftime(param),x.additions,x.modify,x.deletions]}
+		commits = Commit.where(user_id: user_id).map{|x| [x.commited_at.strftime(param),x.additions,x.deletions,x.total]}
 		arr.each{|x| 
 			commit = commits.select{|y| y[0] == x.to_s}
 			line = {}
@@ -117,15 +145,13 @@ class Commit < ActiveRecord::Base
 			line["count"] = commit.length
 			if commit.length == 0
 				line["additions"] = 0
-				line["modify"] = 0
 				line["deletions"] = 0
 				line["total"] = 0
 
 			else
 				line["additions"] = commit.map{|x| x[1]}.inject(:+)
-				line["modify"] = commit.map{|x| x[2]}.inject(:+)
-				line["deletions"] = commit.map{|x| x[3]}.inject(:+)
-				line["total"] =  line["modify"] + line["deletions"]
+				line["deletions"] = commit.map{|x| x[2]}.inject(:+)
+				line["total"] =  commit.map{|x| x[3]}.inject(:+)
 			end
 			out << line
 
@@ -133,74 +159,15 @@ class Commit < ActiveRecord::Base
 		# p out.to_a
 		return out
 	end
-
-	def self.getNumberByDay(user_id)
-		gbyd = {}
-		commits = Commit.where(user_id: user_id).map{|x| x.commited_at.strftime("%d")}
-		(1..31).to_a.each{|x| 
-			if x < 10
-				gbyd["0"+x.to_s] = commits.count{|y| y == "0"+x.to_s}
-			else
-				gbyd[x.to_s] = commits.count{|y| y == x.to_s}
-			end
-		}
-		# p gbyd.to_a
-		return gbyd.to_a
-	end
-
-	def self.getNumberByHr(user_id)
-		gbyhr = []
-		commits = Commit.where(user_id: user_id).map{|x| [x.commited_at.strftime("%H"),x.additions,x.modify,x.deletions]}
-		(1..24).to_a.each{|x| 
-			line = {}
-			if x < 10
-				commit = commits.select{|y| y[0] == "0"+x.to_s}
-			else
-				commit = commits.select{|y| y[0] == x.to_s}
-			end
-
-
-			line["n"] = x<10? "0"+x.to_s : x.to_s
-			line["count"] = commit.length
-			if commit.length == 0
-				line["additions"] = 0
-				line["modify"] = 0
-				line["deletions"] = 0
-				line["total"] = 0
-
-			else
-				line["additions"] = commit.map{|x| x[1]}.inject(:+)
-				line["modify"] = commit.map{|x| x[2]}.inject(:+)
-				line["deletions"] = commit.map{|x| x[3]}.inject(:+)
-				line["total"] =  line["additions"] + line["modify"] + line["deletions"]
-			end
-			gbyhr << line
-
-		}
-		# p gbyhr.to_a
-		return gbyhr
-	end
-
-	def self.getNumberByDFW(user_id)
-		gbydfw = {}
-		commits = Commit.where(user_id: user_id).map{|x| x.commited_at.strftime("%a")}
-		day = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
-		day.to_a.each{|x| 
-				gbydfw[x] = commits.count{|y| y == x}
-		}
-		# p gbydfw.to_a
-		return gbydfw.to_a
-	end	
+	
 
 	def self.getNumberModify(user_id)
 		commits = Commit.where(user_id: user_id)
 		line = {}
 		line["added"] = 0
-		line["modify"] = 0
 		line["delete"] = 0
 		commits.each{|x|
 			line["added"] += x.additions
-			line["modify"] += x.modify
 			line["delete"] += x.deletions
 		}
 		return line
