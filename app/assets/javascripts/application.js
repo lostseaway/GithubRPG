@@ -15,3 +15,7 @@
 //= require turbolinks
 //= require_tree .
 //require jquery-sortable
+//require d3
+//require nv.d3
+
+//require stream_layers

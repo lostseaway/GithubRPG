@@ -119,9 +119,9 @@ class Commit < ActiveRecord::Base
 			if tag != repo_full.match 
 				commits = getJSON("https://api.github.com/repos/"+repo_full.full_name+"/commits?author="+user.login)
 				commits.each{|commit| 
-					# @pool.process{ 
+					@pool.process{ 
 						loadSingleCommit(commit,repo_full.full_name,user_id,repo_full.id)
-					# }
+					}
 				}
 			end
 		}
@@ -171,5 +171,39 @@ class Commit < ActiveRecord::Base
 			line["delete"] += x.deletions
 		}
 		return line
+	end
+
+	def self.getNewGraph(user_id)
+		# sql = 'SELECT commit_files.change , langs.lang , DATE_FORMAT(DATE(commits.commited_at),"%Y-%m") as ct FROM commit_files LEFT JOIN commits ON commit_files.commit_id = commits.id LEFT JOIN file_types on commit_files.file_type_id = file_types.id Left JOIN langs ON file_types.lang_id = langs.id WHERE file_types.check = 1 AND commits.user_id = '+user_id+' GROUP BY ct , langs.lang
+# ORDER BY langs.lang ASC , ct ASC'
+sql = 'SELECT commit_files.change , langs.lang , DATE_FORMAT(DATE(commits.commited_at),"%Y-%m") as ct FROM commit_files LEFT JOIN commits ON commit_files.commit_id = commits.id LEFT JOIN file_types on commit_files.file_type_id = file_types.id Left JOIN langs ON file_types.lang_id = langs.id WHERE file_types.check = 1 AND commits.user_id = '+user_id+' GROUP BY ct , langs.lang
+ORDER BY ct ASC'
+		commits = ActiveRecord::Base.connection.execute(sql).to_a
+
+		out = []
+		commits.each{|commit|
+			if commit[0] == 0
+				next
+			end
+			if out.length == 0
+				tmp = {}
+				tmp["key"] = commit[1]
+				tmp["value"] = []
+				tmp["value"] << [(DateTime.strptime(commit[2],'%Y-%m').strftime("%s")+"000").to_i,commit[0]]
+				out << tmp
+			else
+				c = out.select{|x| x["key"]==commit[1]}
+				if c.length == 0
+					tmp = {}
+					tmp["key"] = commit[1]
+					tmp["value"] = []
+					tmp["value"] << [(DateTime.strptime(commit[2],'%Y-%m').strftime("%s")+"000").to_i,commit[0]]
+					out << tmp
+				else
+					c[0]["value"] << [(DateTime.strptime(commit[2],'%Y-%m').strftime("%s")+"000").to_i,commit[0]]
+				end
+			end
+		}
+		return out
 	end
 end

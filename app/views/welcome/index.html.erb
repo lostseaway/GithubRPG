@@ -51,7 +51,119 @@
 			  }
 			});
 		})
+		
+		
+		
+		
 });
+	var i = 1;	
+	function addLang(){
+		var tmp = $("#g"+i).html();
+		$("#g"+i+" #addLang").css("display", "none");
+		$("#Languages").append('<div class="input-group" id ="g'+(++i)+'">'+tmp+'</div>');
+		$("#g"+i+" #removeLang").attr("onclick","removeLang("+i+")");
+	}
+
+	function removeLang(k){
+		if(k==i){
+			$("#g"+(i-1)+" #addLang").css("display", "");
+			$("#g"+k).remove();
+			i--;
+		}
+		else $("#g"+k).remove();
+	}
+
+	function detail(login){
+		console.log(login);
+		window.open("/user/"+login, '_blank');
+	}
+
+	function search(){
+		var tmp = '<div class="panel panel-default"><div class="panel-heading"><h4>Result</h4></div><div class="panel-body"><table class="table table-bordered table-hover">'
+		
+
+		var head = '<thead><tr><th rowspan="2" style="vertical-align:middle;">#</th><th rowspan="2" style="vertical-align:middle;">UserID</th><th rowspan="2" style="vertical-align:middle;">Name</th>'
+		var checkL = 0;
+		var req = [];
+		$.each($("#req").children(),function(index,value){ 
+			
+			if(value.id == "Languages"){
+				checkL = 1;
+				head+= '<th colspan="'+($("#Languages").find(":selected")).length+'">'+(value.id)+'</th>';	
+				var obj = new Object();
+				obj.option = value.id;
+				var lang = [];
+				$.each($("#Languages").find(":selected"),function(index,value){
+					lang.push(value.text)
+				});
+				obj.value = lang;
+			}
+			else {
+				head+= '<th rowspan="2" style="vertical-align:middle;">'+(value.id)+'</th>';
+				var obj = new Object();
+				obj.option = value.id;
+				obj.value = value.id == "Location" ? $("#Location").find(":selected").val() : $("#"+value.id+" input").val();
+			}
+			req.push(obj);
+		});
+
+		head += '<th rowspan="2" style="vertical-align:middle;">Detail</th>'
+		head+='</tr>';
+		if(checkL == 1){
+			lang = '<tr>'
+			$.each($("#Languages").find(":selected"),function(index,value){
+				lang+='<th>'+(value.text)+'</th>'
+			});
+			lang+='</tr>'
+			head+=lang
+		}
+		head+='</thead>'
+		tmp+=head;
+		
+		var myString = JSON.stringify(req);
+		$.ajax({
+		   type: "POST",
+		   url: "/lookup",
+		   data: myString,      
+		   success: function(obj) {
+		   	var body = "<tbody>"
+		   	var i = 1;
+		   	$.each(obj,function(key,value){
+		   		if(i > 10)return false;
+		   		row = "<tr>"
+		   		row += "<td>"+(i++)+"</td>"
+		   		row += "<td>"+value.login+"</td>"
+		   		row += "<td>"+value.user+"</td>"
+
+		   		$.each($("#req").children(),function(inx,val){ 
+		   			if(val.id == "Languages"){
+		   				$.each($("#Languages").find(":selected"),function(k,v){
+								row += "<td>"+value["langs"][v.text]+"</td>"			
+		   				});
+		   			}
+		   			else{
+		   				row += "<td>"+value[val.id]+"</td>"
+		   			}
+		   		});
+		   		row += '<td><button type="button" class="btn btn-default btn-xs" onClick=\'detail("'+value.login+'")\'>See more</button></td>'
+		   		row += "</tr>"
+		   		// console.log(value["login"]);
+
+		   		body+=row
+		   	});
+		   	body += "</tbody>"
+		   	tmp+=body
+		   	tmp+='</table>'
+			$("#result").html(tmp);
+
+		   },
+		   error:function (xhr, ajaxOptions, thrownError){
+				if(xhr.status==404) {
+					alert('not found ja');
+				}
+			}
+		})
+	}
 </script>
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
@@ -127,31 +239,42 @@
 			<div class="panel-body">
 				<div class="col-md-6 col-xs-6">
 					<h3>Requirements</h3>
-					<ol class='simple_with_animation vertical list-group'>
-					  <li class="list-group-item">
-					  	Most Prefer Language : 
-					  	<select class="form-control input-sm">
-					  		<% @project_lang = @project_lang.sort_by{|x| x[1]}%>
-					  		<option selected><%= @project_lang[0][1]%>
-					  		<% @project_lang[1..-1].each do |x| %>
-							<option><%=x[1]%>
-							<%end%>
-						</select>
-					  </li>
+					<ol class='simple_with_animation vertical list-group' id = "req">
+					  
+					<li class="list-group-item" id="Languages">
+						Prefer Languages : 
+					  	<div class="input-group" id ="g1">
+					  		<button type="button" class="btn btn-danger btn-sm" id="removeLang" onclick="removeLang(1)">
+								<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+							</button>
+
+					  		<button type="button" class="btn btn-default btn-sm" id="addLang" onclick="addLang()">
+								<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+							</button>
+
+						  	<select class="form-control input-sm" style="width:150px">  
+						  		<% @project_lang = @project_lang.sort_by{|x| x[1]}%>
+						  		<option selected><%= @project_lang[0][1]%>
+						  		<% @project_lang[1..-1].each do |x| %>
+								<option><%=x[1]%>
+								<%end%>
+							</select>
+						</div>
+					</li>
 					  
 					</ol>
 
-					<button type="button" class="btn btn-primary">Go!!</button>
+					<button type="button" class="btn btn-primary" onClick="search()">Go!!</button>
 				</div>
 
 				<div class="col-md-6 col-xs-6">
 					<h3>Options</h3>
 					<ol class="simple_with_animation vertical list-group">
-						<li class="list-group-item">
+						<li class="list-group-item" id ="Follower">
 							Followers > : 
-							<input type="text" class="form-control" size='10'></input>
+							<input type="text" class="form-control" size='10' id ="Follwer"></input>
 						</li>
-						<li class="list-group-item">
+						<li class="list-group-item" id="Location">
 							Location : 
 							<select class="form-control input-sm">
 								<%@user_country = @user_country.sort_by{|x| x[1]}%>
@@ -161,15 +284,15 @@
 								<%end%>
 							</select>
 						</li>
-						<li class="list-group-item">Join Github Since (Year) : 
-							<input type="text" class="form-control">
-						</li>
-						<li class="list-group-item">Join Github > (Month) :
-							<input type="text" class="form-control" placeholder="ex. 12 => Has join more 12 months">
+						<li class="list-group-item" id="Experience">Experience > (Year) : 
+							<input type="text" class="form-control" id ="Experience">
 						</li>
 					</ol>
 				</div>
 			</div>
+		</div>
+		<div id="result">
+
 		</div>
 
 		<div class="panel panel-default">

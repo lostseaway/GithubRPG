@@ -63,30 +63,13 @@ class Event < ActiveRecord::Base
 			line["message"] = payload["commits"][0]["message"]
 			payload["commits"].each{|y|
 				commit ={}
-				commit["user_id"] = user.id
-				commit["head"] = payload["head"]
-				commit["before"] = payload["before"]
-				commit["message"] = y["message"].encode("UTF-8")
 				commit["sha"] = y["sha"]
-				commit["commited_at"] = DateTime.strptime(line["created_at"], '%Y-%m-%dT%H:%M:%SZ')
+				commit["commit"] = {}
+				commit["commit"]["author"] = {}
+				commit["commit"]["author"]["date"] = x["created_at"]
+				commit["commit"]["message"] = y["message"]
 
-				added = 0
-				changed = 0
-				delete = 0
-				json = getJSON("https://api.github.com/repos/"+repo.full_name+"/compare/"+commit["before"]+"..."+y["sha"])
-				if json.has_key?("message")
-					next
-				end
-
-				json["files"].each{|y| 
-					added += y["additions"]
-					changed += y["changes"]
-					delete += y["deletions"]
-				}
-				commit["additions"] = added
-				commit["modify"] = changed
-				commit["deletions"] = delete
-				Commit.create(commit)
+				Commit.loadSingleCommit(commit,repo.full_name,user.id,repo.id)
 			}
 		end
 		create(line)

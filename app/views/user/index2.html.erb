@@ -1,0 +1,286 @@
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<style type="text/css">
+    .nvd3 .nv-legend .disabled circle {
+	  fill-opacity: 0;
+	}
+</style>
+<script type="text/javascript">
+  google.load("visualization", "1", {packages:["corechart",'line']});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([
+      ['Language', 'Byte-Of-Code'],
+      <% @lang.sort_by{|x| -x[0]}.each do |item|%>
+      ["<%= Lang.find(item[1]).lang%>",  <%= item[0]%>],
+     <%end%>
+    ]);
+
+  var options = {
+  	title: 'Byte of code',
+    pieHole: 0.4,
+  };
+
+    var chart = new google.visualization.PieChart(document.getElementById('bytechart'));
+    chart.draw(data, options);
+  }
+</script>
+
+<script type="text/javascript">
+  google.load("visualization", "1", {packages:["corechart",'line']});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+
+    var data = google.visualization.arrayToDataTable([
+      ['Action', 'Byte-Of-Code'],
+      ["Additions",  <%= @modifyNo["added"]%>],
+      // ["Changes",  <%= @modifyNo["modify"] %>],
+      ["Deletions",  <%= @modifyNo["delete"] %>],
+    ]);
+
+  var options = {
+  	title: 'Byte of code',
+    pieHole: 0.4,
+  };
+
+    var chart = new google.visualization.PieChart(document.getElementById('chart_mo'));
+    chart.draw(data, options);
+  }
+</script>
+
+
+<%= render "layouts/header" %>
+
+<div class="container">
+
+
+	<div class='row'>
+		<div class="col-xs-6 col-md-2">
+			<a href="#" class="thumbnail">
+	      		<img src=<%= @user["avatar_url"] %>>
+	    	</a>
+	    </div>
+
+	    <div class="col-xs-6 col-md-4">
+		    <div class="panel panel-default" style="height:132px">
+			  <div class="panel-body" style="padding:0px;padding-left:8px">
+			    <h6>Name : <%= @user["name"] %></h6>
+			    <h6>Login Name : <%= @user["login"] %></h6>
+			    <h6>Email : <%= @user["email"] %></h6>
+			    <h6>Register Since : <%= @user["created_at"].strftime("%m/%d/%Y") %></h6>
+			    <h6>Location : <%= @user["location"] %></h6>
+			  </div>
+			</div>
+		</div>
+
+		<div class="col-xs-3 col-md-2">
+		    <div class="panel panel-default" style="height:132px">
+			  <div class="panel-heading">
+			  	<h4>Follower</h4>
+			  </div>
+			  <div class="panel-body">
+					<h6><%= @user.follower %></h6>
+			  </div>
+			</div>
+		</div>
+
+		<div class="col-xs-3 col-md-2">
+		   <div class="panel panel-default" style="height:132px">
+			  <div class="panel-heading">
+			  	<h4>Population</h4>
+			  </div>
+			  <div class="panel-body">
+					<h6>n</h6>
+			  </div>
+			</div>
+		</div>
+
+	</div>
+	<div class="col-xs-12 col-md-9">
+		<div class="panel panel-default"  align="left">
+			<div class="row">
+				<div id="bytechart" style="width: 45%; display: inline-block"></div>
+				<div id="chart_mo" style="width: 50%; display: inline-block"></div>
+			</div>
+			<div id="test1" style="width:100%;">
+			    <svg style="width:100%;height:350px"></svg>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-xs-6 col-md-3">
+		<table class='table table-bordered table-hover' style="table-layout: fixed; width: 100%">
+			<thead>
+				<tr>
+					<% repo_owner = @repo.select{|x| x[2]=="owner"} %>
+					<th>Own Repository (<%= repo_owner.length %>)</th>
+				</tr>
+			</thead>
+		    <tbody>
+			   <% repo_owner[0..3].each do |item|%>
+				   	<tr>
+			   			<td style="word-wrap: break-word">
+			   				<h5><%= item[0]%></h5>
+				   			<h6>
+				   				<% if item[1]!="" && item[1]!=nil%>
+			   						<% if item[1].length <=200 %>
+			   							<small><%= item[1]%></small>
+			   						<%else%>
+			   							<small><%= item[1][0..200]%></small>
+			   							<br>
+			   							<small>...</small>
+			   						<%end%>
+			   					<%else%>
+			   							<small>...</small>
+			   					<%end%>
+			   				</h6>
+			   			</td>
+			   		</tr>
+			   <% end %>
+			   <% if repo_owner.length>4%>
+				   	<tr>
+				   		<td><small>More...</small></td>
+				   	</tr>
+			   <%end%>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="col-xs-6 col-md-3">
+		<table class='table table-bordered table-hover'>
+				<thead>
+					<tr>
+						<% repo_member = @repo.select{|x| x[2]=="member"} %>
+						<th>Collaboarate Repository (<%= repo_member.length %>)</th>
+					</tr>
+				</thead>
+			   <tbody>
+			   <% repo_member[0..3].to_a.each do |item|%>
+			   		<tr>
+			   			<td>
+			   				<h5><%= item[3]%></h5>
+			   				<h6>
+			   					<% if item[1]!="" && item[1]!=nil%>
+			   						<% if item[1].length <=200 %>
+			   							<small><%= item[1]%></small>
+			   						<%else%>
+			   							<small><%= item[1][0..200]%></small>
+			   							<br>
+			   							<small>...</small>
+			   						<%end%>
+			   					<%else%>
+			   							<small>...</small>
+			   					<%end%>
+			   				</h6>
+			   			</td>
+			   		</tr>
+			   <% end %>
+			   <% if repo_member.length>4%>
+			   	<tr>
+			   			<td><small>More...</small></td>
+			   	</tr>
+			   <%end%>
+			</tbody>
+		</table>
+	</div>
+		<div class="col-xs-12 col-md-12">
+			<table class='table table-bordered table-hover'>
+				<colgroup>
+				    <col style="width:10%">
+				    <col style="width:15%">
+				    <col style="width:20%">
+				    <col style="width:40%">
+				</colgroup>  
+					<thead>
+						<tr>
+							<th colspan="4">RecentlyUserEvent</th>
+						</tr>
+						<tr>
+							<th>Date</th>
+							<th>EventType</th>
+							<th>To</th>
+							<th>Message</th>
+						</tr>
+					</thead>
+				   <tbody>
+				   <% @event[0..5].to_a.each do |item|%>
+				   		<tr>
+				   			<td>
+				   				<%= item.created_at.strftime("%d/%m/%Y") %>
+				   			</td>
+				   			<td>
+				   				<%= item.event_type %>
+				   			</td>
+				   			<td>
+				   				<%= Repository.find(item.repository_id).full_name %>
+				   			</td>
+				   			<td>
+				   				<% if item.message.length <= 200%> 
+				   					<%= item.message %>	
+				   					<% else%>
+					   					<%= item.message[0..200] %>	
+										<br>
+					   					<small>Read more...</small>
+					   				<%end%>
+				   			</td>
+
+				   		</tr>
+				   <% end %>
+				</tbody>
+			</table>
+		</div>
+</div>
+
+<script>
+    var data = [
+    	<% @graph.each do |x| %>
+    	{
+    		"key": "<%=x["key"]%>",
+    		"values": [
+    		<% x["value"].each do |y| %>
+    			[<%=y[0]%>,<%=y[1]%>],
+    		<% end %>
+    		]
+    	},
+    	<% end %>
+    ]
+
+
+    console.log(data);
+    nv.addGraph(function() {
+    var chart = nv.models.multiBarChart()
+        .x(function(d) { return d[0] })
+        .y(function(d) { return d[1] })
+    .color(d3.scale.category10().range())
+    .reduceXTicks(true);
+
+        var tickMultiFormat = d3.time.format.multi([
+        // ["%-I:%M%p", function(d) { return d.getMinutes(); }], // not the beginning of the hour
+        // ["%-I%p", function(d) { return d.getHours(); }], // not midnight
+        // ["%b %-d", function(d) { return d.getDate() != 1; }], // not the first of the month
+        // ["%b %-d", function(d) { return d.getMonth(); }], // not Jan 1st
+        ["%Y-%m", function() { return true; }]
+    ]);
+    chart.xAxis
+    	.scale(d3.time.scale())
+        .showMaxMin(false)
+        .rotateLabels(-45) // Want longer labels? Try rotating them to fit easier.
+        // .tickPadding(10)
+        .ticks(d3.time.year)
+        .tickFormat(function (d) { return tickMultiFormat(new Date(d)); })
+        ;
+
+  chart.yAxis.tickFormat(d3.format(''));
+
+    d3.select('#test1 svg')
+        .datum(data)
+        .call(chart)
+        ;
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+});
+
+
+
+</script>
