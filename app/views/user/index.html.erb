@@ -1,4 +1,9 @@
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<style type="text/css">
+    .nvd3 .nv-legend .disabled circle {
+	  fill-opacity: 0;
+	}
+</style>
 <script type="text/javascript">
   google.load("visualization", "1", {packages:["corechart",'line']});
   google.setOnLoadCallback(drawChart);
@@ -41,123 +46,125 @@
     chart.draw(data, options);
   }
 </script>
+      
+
 <script type="text/javascript">
-google.load('visualization', '1', {packages: ['corechart', 'line']});
-google.setOnLoadCallback(drawBasic);
+google.load('visualization', '1', {packages: ['corechart', 'bar']});
+google.setOnLoadCallback(drawStacked);
 
-function drawBasic() {
+function drawStacked() {
+    <%d = @graph%>
+     var t_data = [
+      <% for i in 0..d.length-1 %>
+        [
+          <% for j in 0..d[i].length-1 %>
+            <% if i == 0 || j == 0%>
+              "<%=d[i][j]%>",
+            <% else %>
+              <%=d[i][j]%>,
+            <% end %>
+          <% end %>
+        ],
+      <% end%>
+      ]
+      var g_color = ["#3366CC","#DC3912","#FF9900","#109618","#990099","#3B3EAC","#0099C6","#DD4477","#66AA00","#B82E2E","#316395","#994499","#22AA99","#AAAA11","#6633CC","#E67300","#8B0707","#329262","#5574A6","#3B3EAC"]
+      var data = google.visualization.arrayToDataTable(t_data);
+      var ori_data = google.visualization.arrayToDataTable(t_data);
+      var max_row = <%=d.length%>
+      var max_col = <%=d[0].length%>
+      var check = []
+      var colour = []
+      for(var i = 1 ; i < max_col ;i++){
+        check[i] = true;
+        colour[i-1] = g_color[i-1];
+      }
 
-      var data = new google.visualization.DataTable();
-      data.addColumn('string', 'X');
-      data.addColumn('number', 'Users Commits');
-      data.addColumn('number', 'Line of Code');
 
-      data.addRows([
-        <% @gbyd.each do |item|%>
-       ["<%= item["n"]%>",  <%= item["count"]%> , <%= item["total"]%>],
-     <%end%>
-      ]);
 
       var options = {
-        hAxis: {
-          title: 'Date'
+        width:600,
+        height:500,
+        'chartArea': {'width': '90%', 'height': '60%'},
+        hAxis: {title: "Years", slantedText:true, slantedTextAngle:90,showTextEvery: 4},
+        legend: { position: 'top', maxLines: 3 },
+        // bar: { groupWidth: '75%' },
+        isStacked: true,
+        colors: colour,
+        animation:{
+          duration: 500,
+          easing: 'out',
         },
-        vAxis: {
-        	0:{title: 'Number of Commit'},
-          	1:{
-	          	title: 'Line of code',
-	          	logScale: true
-	          }
-        },
-        series:{
-	       0:{targetAxisIndex:0},
-	       1:{targetAxisIndex:1},
-	   	}
       };
 
+      console.log(options);
 
-      var chart = new google.visualization.LineChart(document.getElementById('chart_day'));
-
+      var chart = new google.visualization.ColumnChart(document.getElementById('time_div'));
       chart.draw(data, options);
+      
+      var stack_b = document.getElementById('stack');
+
+      stack_b.onclick = function() {
+        options.isStacked = !options.isStacked;
+        var text = options.isStacked ? "Group" : "Stack";
+        $("#stack").text(text);
+        chart.draw(data, options);
+      }
+
+      var hide_b = document.getElementById('hide');
+
+      hide_b.onclick = function() {
+        for(var i = 1 ; i<max_col ; i++){
+          for(var j = 0 ; j < max_row-1 ; j++){
+            data.setValue(j,i,0);
+          }
+          check[i] = false;
+          options.colors[i-1] = "#CCCCCC"
+        }
+        chart.draw(data, options);
+      }
+
+      var show_b = document.getElementById('show');
+
+      show_b.onclick = function() {
+        for(var i = 1 ; i<max_col ; i++){
+          for(var j = 0 ; j < max_row-1 ; j++){
+            data.setValue(j,i,ori_data.getValue(j,i));
+          }
+          check[i] = true;
+          options.colors[i-1] = g_color[i-1]
+        }
+        chart.draw(data, options);
+      }
+
+      google.visualization.events.addListener(chart, 'select', function () {
+        console.log(chart.getSelection()[0])
+        var row = chart.getSelection()[0].row;
+        var col = chart.getSelection()[0].column;
+        // console.log("ROW : "+chart.getSelection()[0].row+" COL : "+chart.getSelection()[0].column)
+
+        if(row == null){
+          console.log(col)
+          if(check[col]){
+            for(var i = 0;i<max_row-1;i++){
+             data.setValue(i,col,0);
+            }
+            options.colors[col-1] = "#CCCCCC"
+          }
+          else{
+            for(var i = 0;i<max_row-1;i++){
+             data.setValue(i,col,ori_data.getValue(i,col));
+            }
+            options.colors[col-1] = g_color[col-1]
+          }
+          check[col] = !check[col]
+          chart.draw(data, options);
+        }
+
+      });
     }
 </script>
 
-<script type="text/javascript">
-google.load('visualization', '1', {packages: ['corechart', 'line']});
-google.setOnLoadCallback(drawBasic);
 
-function drawBasic() {
-
-      var data = new google.visualization.DataTable();
-      data.addColumn('string', 'X');
-      data.addColumn('number', 'Users Commits');
-      data.addColumn('number', 'Line of Code');
-
-      data.addRows([
-        <% @gbyhr.each do |item|%>
-       ["<%= item["n"]%>",  <%= item["count"]%> , <%= item["total"]%>],
-     <%end%>
-      ]);
-
-      var options = {
-        hAxis: {
-          title: 'Time'
-        },
-        vAxis: {
-        	0:{title: 'Number of Commit'},
-          	1:{
-	          	title: 'Line of code',
-	          	logScale: true
-	          }
-        },
-        series:{
-	       0:{targetAxisIndex:0},
-	       1:{targetAxisIndex:1},
-	   	}
-      };
-
-      var chart = new google.visualization.LineChart(document.getElementById('chart_hr'));
-
-      chart.draw(data, options);
-    }
-</script>
-
-<script type="text/javascript">
-google.load('visualization', '1', {packages: ['corechart', 'line']});
-google.setOnLoadCallback(drawBasic);
-
-function drawBasic() {
-
-      var data = new google.visualization.DataTable();
-      data.addColumn('string', 'X');
-      data.addColumn('number', 'Users Commits');
-      data.addColumn('number', 'Line of Code');
-
-      data.addRows([
-        <% @gbydfw.each do |item|%>
-       ["<%= item["n"]%>",  <%= item["count"]%> , <%= item["total"]%>],
-     <%end%>
-      ]);
-
-      var options = {
-
-        hAxis: {
-          title: 'Day of week'
-        },
-        vAxis: {
-        	title: 'Line of code'
-        },
-        series:{
-	       0:{targetAxisIndex:0},
-	       1:{targetAxisIndex:1},
-	   	}
-      };
-
-      var chart = new google.visualization.LineChart(document.getElementById('chart_dfw'));
-
-      chart.draw(data, options);
-    }
-</script>
 
 <%= render "layouts/header" %>
 
@@ -212,9 +219,16 @@ function drawBasic() {
 				<div id="bytechart" style="width: 45%; display: inline-block"></div>
 				<div id="chart_mo" style="width: 50%; display: inline-block"></div>
 			</div>
-			<div id="chart_day" style="width: 100%;"></div>
-			<div id="chart_hr" style="width: 100%;"></div>
-			<div id="chart_dfw" style="width: 100%;"></div>
+			<div id="test" style="width:100%;text-align: center;">
+				<div class="btn-group" role="group" aria-label="...">
+				    <button type="button" class="btn btn-default" id = "stack">Group</button>
+				    <button type="button" class="btn btn-default" id = "hide">Hide All</button>
+				    <button type="button" class="btn btn-default" id = "show">Show All</button>
+				  </div>
+				<div>
+			    	<div id="time_div" style="display:inline-block"></div>
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -230,7 +244,7 @@ function drawBasic() {
 			   <% repo_owner[0..3].each do |item|%>
 				   	<tr>
 			   			<td style="word-wrap: break-word">
-			   				<h5><%= item[0]%></h5>
+			   				<h5><a href="https://github.com/<%= item[3]%>" target="_blank"><%= item[0]%></a></h5>
 				   			<h6>
 				   				<% if item[1]!="" && item[1]!=nil%>
 			   						<% if item[1].length <=200 %>
@@ -268,7 +282,7 @@ function drawBasic() {
 			   <% repo_member[0..3].to_a.each do |item|%>
 			   		<tr>
 			   			<td>
-			   				<h5><%= item[3]%></h5>
+			   				<h5><a href="https://github.com/<%= item[3]%>" target="_blank"><%= item[3]%></a></h5>
 			   				<h6>
 			   					<% if item[1]!="" && item[1]!=nil%>
 			   						<% if item[1].length <=200 %>

@@ -43,9 +43,9 @@ class UserRepository < ActiveRecord::Base
 		tmp = getJSON("https://api.github.com/users/"+login+"/repos?type=all")
 
 		tmp.each{|x|
-			if x["fork"]
-				next
-			end
+			# if x["fork"]
+			# 	next
+			# end
 			repo = Repository.getRepo(x)
 			if x["owner"]["login"]==login
 				status = "owner"

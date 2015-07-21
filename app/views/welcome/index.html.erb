@@ -1,4 +1,3 @@
-
 <script type="text/javascript">
 	$(document).ready(function () {
 	    $(".ex_users").click(function () {
@@ -79,17 +78,17 @@
 	}
 
 	function search(){
-		var tmp = '<div class="panel panel-default"><div class="panel-heading"><h4>Result</h4></div><div class="panel-body"><table class="table table-bordered table-hover">'
+		var tmp = '<div class="panel panel-default"><div class="panel-heading"><h4>Result</h4></div><div class="panel-body"><table class="table table-bordered table-hover tablesorter" id = "result_table">'
 		
 
-		var head = '<thead><tr><th rowspan="2" style="vertical-align:middle;">#</th><th rowspan="2" style="vertical-align:middle;">UserID</th><th rowspan="2" style="vertical-align:middle;">Name</th>'
+		var head = '<thead><tr><th rowspan="2" style="vertical-align:middle;">UserID<span style="cursor:pointer;" class="glyphicon glyphicon-sort" aria-hidden="true"></span></th><th rowspan="2" style="vertical-align:middle;">Name<span style="cursor:pointer;" class="glyphicon glyphicon-sort" aria-hidden="true"></span></th><th rowspan="2" style="vertical-align:middle;">Location<span style="cursor:pointer;" class="glyphicon glyphicon-sort" aria-hidden="true"></span></th>'
 		var checkL = 0;
 		var req = [];
 		$.each($("#req").children(),function(index,value){ 
 			
 			if(value.id == "Languages"){
 				checkL = 1;
-				head+= '<th colspan="'+($("#Languages").find(":selected")).length+'">'+(value.id)+'</th>';	
+				head+= '<th colspan="'+($("#Languages").find(":selected")).length+'">LOC</th>';	
 				var obj = new Object();
 				obj.option = value.id;
 				var lang = [];
@@ -99,7 +98,9 @@
 				obj.value = lang;
 			}
 			else {
-				head+= '<th rowspan="2" style="vertical-align:middle;">'+(value.id)+'</th>';
+				if(value.id != "Location"){
+					head+= '<th rowspan="2" style="vertical-align:middle;cursor:pointer;">'+(value.id)+'</th>';
+				}
 				var obj = new Object();
 				obj.option = value.id;
 				obj.value = value.id == "Location" ? $("#Location").find(":selected").val() : $("#"+value.id+" input").val();
@@ -107,12 +108,12 @@
 			req.push(obj);
 		});
 
-		head += '<th rowspan="2" style="vertical-align:middle;">Detail</th>'
+		// head += '<th rowspan="2" style="vertical-align:middle;cursor:pointer;">Detail</th>'
 		head+='</tr>';
 		if(checkL == 1){
 			lang = '<tr>'
 			$.each($("#Languages").find(":selected"),function(index,value){
-				lang+='<th>'+(value.text)+'</th>'
+				lang+='<th style="vertical-align:middle;cursor:pointer;">'+(value.text)+'<span style="cursor:pointer;" class="glyphicon glyphicon-sort" aria-hidden="true"></span></th>'
 			});
 			lang+='</tr>'
 			head+=lang
@@ -129,11 +130,12 @@
 		   	var body = "<tbody>"
 		   	var i = 1;
 		   	$.each(obj,function(key,value){
-		   		if(i > 10)return false;
+		   		// if(i > 10)return false;
 		   		row = "<tr>"
-		   		row += "<td>"+(i++)+"</td>"
-		   		row += "<td>"+value.login+"</td>"
+		   		// row += "<td>"+(i++)+"</td>"
+		   		row += '<td><a onClick=\'detail("'+value.login+'")\'>'+value.login+'</a></td>'
 		   		row += "<td>"+value.user+"</td>"
+		   		row += "<td>"+value["Location"]+"</td>"
 
 		   		$.each($("#req").children(),function(inx,val){ 
 		   			if(val.id == "Languages"){
@@ -141,11 +143,14 @@
 								row += "<td>"+value["langs"][v.text]+"</td>"			
 		   				});
 		   			}
+		   			else if(val.id == "Location"){
+
+		   			}
 		   			else{
 		   				row += "<td>"+value[val.id]+"</td>"
 		   			}
 		   		});
-		   		row += '<td><button type="button" class="btn btn-default btn-xs" onClick=\'detail("'+value.login+'")\'>See more</button></td>'
+		   		// row += '<td><button type="button" class="btn btn-default btn-xs" onClick=\'detail("'+value.login+'")\'>More Detail</button></td>'
 		   		row += "</tr>"
 		   		// console.log(value["login"]);
 
@@ -155,11 +160,11 @@
 		   	tmp+=body
 		   	tmp+='</table>'
 			$("#result").html(tmp);
-
+			$("#result_table").tablesorter(); 
 		   },
 		   error:function (xhr, ajaxOptions, thrownError){
 				if(xhr.status==404) {
-					alert('not found ja');
+					alert('Not Found Any Match Developer!');
 				}
 			}
 		})
@@ -168,70 +173,12 @@
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
-<script type="text/javascript">
-  google.load("visualization", "1", {packages:["geochart"]});
-  google.setOnLoadCallback(drawRegionsMap);
 
-  function drawRegionsMap() {
-
-    var data = google.visualization.arrayToDataTable([
-      ['Country', 'Popularity'],
-      <% @user_country.each do |x| %>
-      ['<%=x[1]%>',<%=x[0]%>],
-      <%end%>
-    ]);
-
-    var options = {};
-
-    var chart = new google.visualization.GeoChart(document.getElementById('regions_div'));
-
-    chart.draw(data, options);
-  }
-</script>
-<script type="text/javascript">
-  google.load("visualization", "1", {packages:["corechart",'line']});
-  google.setOnLoadCallback(drawChart);
-  function drawChart() {
-    var data = google.visualization.arrayToDataTable([
-      ['Language', 'No. of Project'],
-      <% @project_lang.each do |item|%>
-      ["<%= item[1]%>",  <%= item[0]%>],
-     <%end%>
-    ]);
-
-  var options = {
-  	title: 'Project Language',
-    pieHole: 0.4,
-  };
-
-    var chart = new google.visualization.PieChart(document.getElementById('chart_lang'));
-    chart.draw(data, options);
-  }
-</script>
 
 <%=render "layouts/header"%>
 <div class="container">
-	<div class="col-md-3">
-		<table class='table table-bordered table-hover'>
-				<thead>
-					<tr>
-						<th>Some Users!</th>
-					</tr>
-				</thead>
-			   <tbody>
-			   <% @show_users.each do |item|%>
-			   		<tr class='ex_users' id="<%=item%>">
-			   			<td><h5><%=item%></h5></td>
-			   		</tr>
-			   <% end %>
-			   	<tr>
-		   			<td><small>More...</small></td>
-			   	</tr>
-			</tbody>
-		</table>
-	</div>
 
-	<div class="col-md-8">
+	<div class="col-md-11">
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4>Look for Developer!</h4>
@@ -254,9 +201,9 @@
 
 						  	<select class="form-control input-sm" style="width:150px">  
 						  		<% @project_lang = @project_lang.sort_by{|x| x[1]}%>
-						  		<option selected><%= @project_lang[0][1]%>
+						  		<option selected><%= @project_lang[0][0]%>
 						  		<% @project_lang[1..-1].each do |x| %>
-								<option><%=x[1]%>
+								<option><%=x[0]%>
 								<%end%>
 							</select>
 						</div>
@@ -295,18 +242,6 @@
 
 		</div>
 
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h4>Site Statistic</h4>
-			</div>
-			<div class="panel-body">
-				<h3><%=@number_user%> users in our database</h3>
-				<div id="regions_div" style="width:100%"></div>
-				<h3><%=@number_repo%> repositories in our database</h3>
-
-				<div id="chart_lang" style="width: 50%;"></div>
-
-			</div>
-		</div>
+		
 	</div>
 </div>

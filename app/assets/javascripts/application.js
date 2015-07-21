@@ -17,5 +17,5 @@
 //require jquery-sortable
 //require d3
 //require nv.d3
-
+//require jquery.tablesorter
 //require stream_layers

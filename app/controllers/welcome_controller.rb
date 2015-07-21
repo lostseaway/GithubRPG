@@ -25,7 +25,8 @@ class WelcomeController < ApplicationController
 	end
 
 	def getProjectLang
-		sql ="SELECT COUNT(langs.lang) as Project , langs.lang FROM lang_repositories LEFT JOIN langs ON lang_repositories.lang_id = langs.id GROUP BY langs.lang ORDER BY Project DESC"
+		# sql ="SELECT COUNT(langs.lang) as Project , langs.lang FROM lang_repositories LEFT JOIN langs ON lang_repositories.lang_id = langs.id GROUP BY langs.lang ORDER BY Project DESC"
+    sql = "SELECT langs.lang FROM `file_types` LEFT JOIN langs ON file_types.lang_id = langs.id WHERE file_types.check = 1 ORDER BY `name` ASC"
 		return ActiveRecord::Base.connection.execute(sql).to_a
 	end		
 

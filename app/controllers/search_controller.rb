@@ -20,7 +20,7 @@ class SearchController < ApplicationController
 		json.each{|opt|
 			p opt["option"]
 			if opt["option"] == "Languages"
-				sql  = 'SELECT users.name ,users.login, langs.lang , SUM(commit_files.change) AS LOC FROM users RIGHT JOIN commits ON users.id = commits.user_id RIGHT JOIN commit_files ON commits.id = commit_files.commit_id INNER JOIN file_types ON commit_files.file_type_id = file_types.id INNER JOIN langs ON file_types.lang_id = langs.id GROUP BY langs.lang , users.name'
+				sql  = 'SELECT users.name ,users.login, langs.lang , SUM(commit_files.change),users.location  AS LOC FROM users RIGHT JOIN commits ON users.id = commits.user_id RIGHT JOIN commit_files ON commits.id = commit_files.commit_id INNER JOIN file_types ON commit_files.file_type_id = file_types.id INNER JOIN langs ON file_types.lang_id = langs.id GROUP BY langs.lang , users.name'
 				commits = ActiveRecord::Base.connection.execute(sql).to_a
 				
 				commits.each{|x|
@@ -29,6 +29,7 @@ class SearchController < ApplicationController
 						tmp = {}
 						tmp["user"] = x[0]
 						tmp["login"] = x[1]
+						tmp["Location"] = x[4]
 						t = {}
 						t[x[2]] = x[3]
 						tmp["langs"] = t
@@ -44,6 +45,7 @@ class SearchController < ApplicationController
 							tmp = {}
 							tmp["user"] = x[0]
 							tmp["login"] = x[1]
+							tmp["Location"] = x[4]
 							t = {}
 							t[x[2]] = x[3]
 							tmp["langs"] = t

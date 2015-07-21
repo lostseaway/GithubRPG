@@ -92,9 +92,9 @@ class UserController < ApplicationController
 		@gbydfw = Commit.getGraph(@user.id,["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],"%a")
 		# @modifyNo = {}
 		@modifyNo = Commit.getNumberModify(@user.id)
-		@graph = Commit.getNewGraph(@user.id.to_s)
+		@graph = Commit.getGraphN(@user.id.to_s)
 		p @graph
-		render 'index2'
+		render 'index'
 	end
 
 	def loading

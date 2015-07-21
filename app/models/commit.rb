@@ -176,8 +176,8 @@ class Commit < ActiveRecord::Base
 	def self.getNewGraph(user_id)
 		# sql = 'SELECT commit_files.change , langs.lang , DATE_FORMAT(DATE(commits.commited_at),"%Y-%m") as ct FROM commit_files LEFT JOIN commits ON commit_files.commit_id = commits.id LEFT JOIN file_types on commit_files.file_type_id = file_types.id Left JOIN langs ON file_types.lang_id = langs.id WHERE file_types.check = 1 AND commits.user_id = '+user_id+' GROUP BY ct , langs.lang
 # ORDER BY langs.lang ASC , ct ASC'
-sql = 'SELECT commit_files.change , langs.lang , DATE_FORMAT(DATE(commits.commited_at),"%Y-%m") as ct FROM commit_files LEFT JOIN commits ON commit_files.commit_id = commits.id LEFT JOIN file_types on commit_files.file_type_id = file_types.id Left JOIN langs ON file_types.lang_id = langs.id WHERE file_types.check = 1 AND commits.user_id = '+user_id+' GROUP BY ct , langs.lang
-ORDER BY ct ASC'
+		sql = 'SELECT commit_files.change , langs.lang , DATE_FORMAT(DATE(commits.commited_at),"%Y-%m") as ct FROM commit_files LEFT JOIN commits ON commit_files.commit_id = commits.id LEFT JOIN file_types on commit_files.file_type_id = file_types.id Left JOIN langs ON file_types.lang_id = langs.id WHERE file_types.check = 1 AND commits.user_id = '+user_id+' GROUP BY ct , langs.lang
+		ORDER BY ct ASC'
 		commits = ActiveRecord::Base.connection.execute(sql).to_a
 
 		out = []
@@ -204,6 +204,59 @@ ORDER BY ct ASC'
 				end
 			end
 		}
+		return out
+	end
+
+	def self.getGraphN(user_id)
+			# sql = 'SELECT commit_files.change , langs.lang , DATE_FORMAT(DATE(commits.commited_at),"%Y-%m") as ct FROM commit_files LEFT JOIN commits ON commit_files.commit_id = commits.id LEFT JOIN file_types on commit_files.file_type_id = file_types.id Left JOIN langs ON file_types.lang_id = langs.id WHERE file_types.check = 1 AND commits.user_id = '+user_id+' GROUP BY ct , langs.lang
+	# ORDER BY langs.lang ASC , ct ASC'
+		sql = 'SELECT commit_files.change , langs.lang , DATE_FORMAT(DATE(commits.commited_at),"%Y-%m") as ct FROM commit_files LEFT JOIN commits ON commit_files.commit_id = commits.id LEFT JOIN file_types on commit_files.file_type_id = file_types.id Left JOIN langs ON file_types.lang_id = langs.id WHERE file_types.check = 1 AND commits.user_id = '+user_id+' GROUP BY ct , langs.lang
+		ORDER BY ct ASC'
+		commits = ActiveRecord::Base.connection.execute(sql).to_a
+
+		head = ["date"]+ commits.map{|x| x[1]}.uniq
+		t = commits.map{|x| x[2]}.uniq
+		date = []
+		for i in 0..t.length-1
+			if i == 0
+				date << t[i]
+				next
+			end
+			k = 0
+			while k<=20
+				bfd = date[-1].split("-")
+				afd = t[i].split("-")
+				if bfd[0] == afd[0]
+					if (bfd[1]).to_i == (afd[1].to_i)-1
+						date << afd.join("-")
+						break
+					end
+					date << [bfd[0],(bfd[1].to_i+1).to_s.rjust(2, '0')].join("-")
+				else
+					if bfd[1].to_i == 12 && bfd[0].to_i == afd[0].to_i-1
+						date << afd.join("-")
+						break
+					elsif bfd[1].to_i == 12
+						date << [bfd[0]+1,1.to_s.rjust(2, '0')].join("-")	
+					else
+						date << [bfd[0],(bfd[1].to_i+1).to_s.rjust(2, '0')].join("-")
+					end
+				end
+				k+=1
+			end
+		end
+		out = []
+		out << head
+		date.each{|x|
+			sc = commits.select{|k| k[2] == x}
+			lo = ([x]+([0]*(head.length-1)))
+			sc.each{|k|
+				index = head.find_index(k[1])
+				lo[index] = k[0]
+			}
+			out << lo
+		}
+		# out.each{|x| p x}
 		return out
 	end
 end
